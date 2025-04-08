@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .input-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 10px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        #totalExpense {
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Expense Tracker</h1>
+        <div class="input-section">
+            <input type="text" id="expenseName" placeholder="Expense Name" required>
+            <input type="number" id="expenseAmount" placeholder="Amount" required>
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+        
+        <div id="expenses">
+            <h2>Expense List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="expenseList"></tbody>
+            </table>
+            
+            <div id="totalExpense">Total Expense: $0</div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let totalExpense = 0;
+        let monthlyExpenses = [];
+
+        function addExpense() {
+            const name = document.getElementById("expenseName").value.trim();
+            const amount = parseFloat(document.getElementById("expenseAmount").value);
+            
+            if (name && !isNaN(amount)) {
+                totalExpense += amount;
+
+                const expenseList = document.getElementById("expenseList");
+                const row = document.createElement("tr");
+                
+                row.innerHTML = `
+                    <td>${name}</td>
+                    <td>$${amount.toFixed(2)}</td>
+                    <td><button onclick="removeExpense(this)">Remove</button></td>
+                `;
+                
+                expenseList.appendChild(row);
+                document.getElementById("totalExpense").innerText = `Total Expense: $${totalExpense.toFixed(2)}`;
+
+                // Update monthly expenses
+                const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+                monthlyExpenses[currentMonth] = (monthlyExpenses[currentMonth] || 0) + amount;
+
+                updateChart();
+                
+                // Clear input fields
+                document.getElementById("expenseName").value = '';
+                document.getElementById("expenseAmount").value = '';
+                
+            } else {
+                alert("Please enter valid expense details.");
+            }
+        }
+
+        function removeExpense(button) {
+            const row = button.parentNode.parentNode;
+            const amount = parseFloat(row.children[1].innerText.replace('$', ''));
+            
+            totalExpense -= amount;
+
+            row.remove();
+            
+            document.getElementById("totalExpense").innerText = `Total Expense: $${totalExpense.toFixed(2)}`;
+
+           // Update monthly expenses
+           const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+           monthlyExpenses[currentMonth] -= amount;
+
+           updateChart();
+       }
+
+       const ctx = document.getElementById('expenseChart').getContext('2d');
+       let expenseChart;
+
+       function updateChart() {
+           if (expenseChart) {
+               expenseChart.destroy();
+           }
+
+           expenseChart = new Chart(ctx, {
+               type: 'bar',
+               data: {
+                   labels: Object.keys(monthlyExpenses),
+                   datasets: [{
+                       label: 'Monthly Expenses',
+                       data: Object.values(monthlyExpenses),
+                       backgroundColor: 'rgba(40,167,69,0.6)',
+                       borderColor: 'rgba(40,167,69,1)',
+                       borderWidth: 1
+                   }]
+               },
+               options: {
+                   scales: {
+                       yAxes: [{
+                           ticks: {
+                               beginAtZero:true
+                           }
+                       }]
+                   },
+                   responsive:true,
+                   maintainAspectRatio:false
+               }
+           });
+       }
+    </script>
+
+</body>
+</html>
